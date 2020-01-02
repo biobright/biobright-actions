@@ -1,0 +1,22 @@
+{
+  "name": "biobright-actions",
+  "version": "0.0.1",
+  "description": "A repository for common Github actions",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/biobright/biobright-actions.git"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/biobright/biobright-actions/issues"
+  },
+  "homepage": "https://github.com/biobright/biobright-actions#readme",
+  "devDependencies": {
+    "@actions/core": "^1.2.0",
+    "@actions/github": "^2.0.0"
+  }
+}
