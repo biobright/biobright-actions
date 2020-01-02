@@ -1,0 +1,9 @@
+name: 'Update package file'
+description: 'update version in package.json and package-lock.json'
+inputs:
+  ref:
+    description: 'Branch to update files on'
+    required: true
+runs:
+  using: 'node12'
+  main: 'index.js'

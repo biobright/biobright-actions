@@ -1,0 +1,9 @@
+name: 'Create pull requests'
+description: 'Create pull requests for the release branch to develop and master'
+inputs:
+  ref:
+    description: 'release branch'
+    required: true
+runs:
+  using: 'node12'
+  main: 'index.js'

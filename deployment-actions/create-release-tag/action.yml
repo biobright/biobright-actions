@@ -1,0 +1,5 @@
+name: 'Create release tag'
+description: 'Create a release tag'
+runs:
+  using: 'node12'
+  main: 'index.js'
