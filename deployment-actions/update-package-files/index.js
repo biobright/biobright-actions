@@ -44,19 +44,19 @@ async function updatePackageFile(packageFileName) {
 
   //console.log(treeResponse.data.tree) //tree.find(({ path }) => path === 'package.json')
 
-  const blobResponse = await octokit.git.getBlob({
-    repo,
-    owner,
-    file_sha: treeResponse.data.tree.find(({ path }) => path === packageFileName ).sha
-  })
+  // const blobResponse = await octokit.git.getBlob({
+  //   repo,
+  //   owner,
+  //   file_sha: treeResponse.data.tree.find(({ path }) => path === packageFileName ).sha
+  // })
 
-  console.log(blobResponse)
+  // console.log(blobResponse)
 
-  const { data: { sha } } = await octokit.repos.getContents({
-    owner,
-    repo,
-    path: packageFileName
-  })
+  // const { data: { sha } } = await octokit.repos.getContents({
+  //   owner,
+  //   repo,
+  //   path: packageFileName
+  // })
 
   const userInfo = {
     name: owner,
@@ -69,12 +69,12 @@ async function updatePackageFile(packageFileName) {
     path: packageFileName,
     message: `Update ${packageFileName} version to ${process.env.tag}`,
     content: Buffer.from(jsonPackage).toString('base64'),
-    sha,
+    sha: treeResponse.data.tree.find(({ path }) => path === packageFileName).sha,
     branch: core.getInput('ref'),
     committer: userInfo,
     author: userInfo
   })
-  //console.log(updateFileResponse)
+  console.log(updateFileResponse)
 }
 
 async function run() {
