@@ -23,13 +23,13 @@ async function updatePackageFile(packageFileName) {
   const packageObj = JSON.parse(await promisifyCallback(fs.readFile, packageFilePath))
   packageObj.version = process.env.tag
   const jsonPackage = JSON.stringify(packageObj, undefined, 2)
-
+  console.log(jsonPackage)
   const { data: { sha } } = await octokit.repos.getContents({
     owner,
     repo,
     path: packageFileName
   })
-
+  console.log(sha)
   const userInfo = {
     name: owner,
     email
