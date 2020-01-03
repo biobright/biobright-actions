@@ -16,12 +16,15 @@ async function updatePackageFile(packageFileName) {
   const octokit = new GitHub(process.env.GITHUB_TOKEN)
   const { owner, repo } = context.repo
   const { email } = context.payload.pusher
+  console.log(packageFileName)
   const packageFilePath = path.join(
     process.env.GITHUB_WORKSPACE,
     packageFileName
   )
+  console.log(packageFilePath)
   const packageObj = JSON.parse(await promisifyCallback(fs.readFile, packageFilePath))
   packageObj.version = process.env.tag
+  console.log(packageObj)
   const jsonPackage = JSON.stringify(packageObj, undefined, 2)
   console.log(jsonPackage)
   const { data: { sha } } = await octokit.repos.getContents({
