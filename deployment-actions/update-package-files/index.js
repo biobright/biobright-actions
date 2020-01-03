@@ -36,7 +36,13 @@ async function updatePackageFile(packageFileName) {
     per_page: 1
   })
 
-  console.log(commitsResponse.data[0].commit.tree.sha)
+  const treeResponse = await octokit.git.getTree({
+    owner,
+    repo,
+    tree_sha: commitsResponse.data[0].commit.tree.sha
+  })
+
+  console.log(treeResponse)
 
   const { data: { sha } } = await octokit.repos.getContents({
     owner,
