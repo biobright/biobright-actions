@@ -35,7 +35,7 @@ async function updatePackageFile(packageFileName) {
     email
   }
 
-  const updateFileResponse = await octokit.repos.createOrUpdateFile({
+  await octokit.repos.createOrUpdateFile({
     owner,
     repo,
     path: packageFileName,
@@ -46,7 +46,6 @@ async function updatePackageFile(packageFileName) {
     committer: userInfo,
     author: userInfo
   })
-  console.log(updateFileResponse)
 }
 
 async function run() {
