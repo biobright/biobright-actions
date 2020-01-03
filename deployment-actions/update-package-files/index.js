@@ -44,7 +44,7 @@ async function updatePackageFile(packageFileName) {
 
   //console.log(treeResponse.data.tree) //tree.find(({ path }) => path === 'package.json')
 
-  const blobResponse = octokit.git.getBlob({
+  const blobResponse = await octokit.git.getBlob({
     repo,
     owner,
     file_sha: treeResponse.data.tree.find(({ path }) => path === packageFileName ).sha
