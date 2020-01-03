@@ -12,10 +12,30 @@ function promisifyCallback(fn, ...args) {
   })
 }
 
-async function updatePackageFile(packageFileName) {
-  const octokit = new GitHub(process.env.GITHUB_TOKEN)
-  const { owner, repo } = context.repo
-  const { email } = context.payload.pusher
+async function getFileSha(packageFileName, octokit, owner, repo) {
+  // get repo data
+  const repoResponse = await octokit.repos.get({
+    owner,
+    repo
+  })
+  // get commits for repo
+  const commitsResponse = await octokit.repos.listCommits({
+    owner,
+    repo,
+    sha: repoResponse.data.default_branch,
+    per_page: 1
+  })
+  // get the tree from the latest commit
+  const treeResponse = await octokit.git.getTree({
+    owner,
+    repo,
+    tree_sha: commitsResponse.data[0].commit.tree.sha
+  })
+  // get the file sha from the tree data
+  return treeResponse.data.tree.find(({ path }) => path === packageFileName).sha
+}
+
+async function updatePackageFileVersion(packageFileName) {
   const packageFilePath = path.join(
     process.env.GITHUB_WORKSPACE,
     packageFileName
@@ -24,65 +44,34 @@ async function updatePackageFile(packageFileName) {
   packageObj.version = process.env.tag
   const jsonPackage = JSON.stringify(packageObj, undefined, 2)
 
-  const repoResponse = await octokit.repos.get({
-    owner,
-    repo
-  })
-
-  const commitsResponse = await octokit.repos.listCommits({
-    owner,
-    repo,
-    sha: repoResponse.data.default_branch,
-    per_page: 1
-  })
-
-  const treeResponse = await octokit.git.getTree({
-    owner,
-    repo,
-    tree_sha: commitsResponse.data[0].commit.tree.sha
-  })
-
-  //console.log(treeResponse.data.tree) //tree.find(({ path }) => path === 'package.json')
-
-  // const blobResponse = await octokit.git.getBlob({
-  //   repo,
-  //   owner,
-  //   file_sha: treeResponse.data.tree.find(({ path }) => path === packageFileName ).sha
-  // })
-
-  // console.log(blobResponse)
-
-  // const { data: { sha } } = await octokit.repos.getContents({
-  //   owner,
-  //   repo,
-  //   path: packageFileName
-  // })
-
-  const userInfo = {
-    name: owner,
-    email
-  }
-
-  const updateFileResponse = await octokit.repos.createOrUpdateFile({
-    owner,
-    repo,
-    path: packageFileName,
-    message: `Update ${packageFileName} version to ${process.env.tag}`,
-    content: Buffer.from(jsonPackage).toString('base64'),
-    sha: treeResponse.data.tree.find(({ path }) => path === packageFileName).sha,
-    branch: core.getInput('ref'),
-    committer: userInfo,
-    author: userInfo
-  })
-  console.log(updateFileResponse)
+  return Buffer.from(jsonPackage).toString('base64')
 }
 
 async function run() {
   try {
     const packageFiles = ['package.json', 'package-lock.json']
+    const octokit = new GitHub(process.env.GITHUB_TOKEN)
+    const { owner, repo } = context.repo
+    const { email } = context.payload.pusher
+    const userInfo = {
+      name: owner,
+      email
+    }
 
-    for (fileName of packageFiles) {
-      await updatePackageFile(fileName)
+    for (let fileName of packageFiles) {
+      const fileSha = await getFileSha(fileName, octokit, owner, repo)
+      const fileContent = await updatePackageFileVersion(fileName)
+      await octokit.repos.createOrUpdateFile({
+        owner,
+        repo,
+        path: fileName,
+        message: `Update ${fileName} version to ${process.env.tag}`,
+        content: fileContent,
+        sha: fileSha,
+        branch: core.getInput('ref'),
+        committer: userInfo,
+        author: userInfo
+      })
     }
   } catch (err) {
     core.setFailed(err.message)
