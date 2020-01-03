@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "description": "A repository for common Github actions",
   "scripts": {
-    "test": "test"
+    "test": "test",
+    "build": "ncc build"
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,7 @@
   "homepage": "https://github.com/biobright/biobright-actions#readme",
   "devDependencies": {
     "@actions/core": "^1.2.0",
-    "@actions/github": "^2.0.0"
+    "@actions/github": "^2.0.0",
+    "@zeit/ncc": "^0.20.5"
   }
 }
