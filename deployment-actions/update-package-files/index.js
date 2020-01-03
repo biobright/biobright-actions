@@ -47,7 +47,7 @@ async function updatePackageFile(packageFileName) {
     committer: userInfo,
     author: userInfo
   })
-  console.log(updateFileResponse)
+  //console.log(updateFileResponse)
 }
 
 async function run() {
