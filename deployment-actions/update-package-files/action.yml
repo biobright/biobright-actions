@@ -4,6 +4,8 @@ inputs:
   ref:
     description: 'Branch to update files on'
     required: true
+  packages-to-update:
+    description: 'List of packages whos versions need updating'
 runs:
   using: 'node12'
   main: 'dist/index.js'

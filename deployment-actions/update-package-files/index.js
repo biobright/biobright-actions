@@ -2,38 +2,8 @@ const core = require('@actions/core')
 const { context, GitHub } = require('@actions/github')
 const fs = require('fs')
 const path = require('path')
-
-function promisifyCallback(fn, ...args) {
-  return new Promise((resolve, reject) => {
-    fn(...args, (err, data) => {
-      if (err) reject(err)
-      resolve(data)
-    })
-  })
-}
-
-async function getFileSha(packageFileName, octokit, owner, repo) {
-  // get repo data
-  const repoResponse = await octokit.repos.get({
-    owner,
-    repo
-  })
-  // get commits for repo
-  const commitsResponse = await octokit.repos.listCommits({
-    owner,
-    repo,
-    sha: repoResponse.data.default_branch,
-    per_page: 1
-  })
-  // get the tree from the latest commit
-  const treeResponse = await octokit.git.getTree({
-    owner,
-    repo,
-    tree_sha: commitsResponse.data[0].commit.tree.sha
-  })
-  // get the file sha from the tree data
-  return treeResponse.data.tree.find(({ path }) => path === packageFileName).sha
-}
+const { updatePackageVersions } = require('./package-updater')
+const { promisifyCallback, getFileSha } = require('./utils')
 
 async function updatePackageFileVersion(packageFileName) {
   const packageFilePath = path.join(
@@ -42,9 +12,8 @@ async function updatePackageFileVersion(packageFileName) {
   )
   const packageObj = JSON.parse(await promisifyCallback(fs.readFile, packageFilePath))
   packageObj.version = process.env.tag
-  const jsonPackage = JSON.stringify(packageObj, undefined, 2)
 
-  return Buffer.from(jsonPackage).toString('base64')
+  return packageObj
 }
 
 async function run() {
@@ -57,16 +26,26 @@ async function run() {
       name: owner,
       email
     }
+    let packageFilesObject = {}
+
+    for (let fileName of packageFiles) {
+      packageFilesObject[fileName] = await updatePackageFileVersion(fileName)
+    }
+
+    if (core.getInput('packages-to-update')) {
+      // reassign packageFilesObject if updates are needed
+      packageFilesObject = await updatePackageVersions(owner, packageFilesObject)
+    }
 
     for (let fileName of packageFiles) {
       const fileSha = await getFileSha(fileName, octokit, owner, repo)
-      const fileContent = await updatePackageFileVersion(fileName)
+      const content = JSON.stringify(packageFilesObject[fileName], undefined, 2)
       await octokit.repos.createOrUpdateFile({
         owner,
         repo,
         path: fileName,
         message: `Update ${fileName} version to ${process.env.tag}`,
-        content: fileContent,
+        content: Buffer.from(content).toString('base64'),
         sha: fileSha,
         branch: core.getInput('ref'),
         committer: userInfo,
