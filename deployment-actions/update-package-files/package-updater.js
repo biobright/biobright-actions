@@ -1,10 +1,11 @@
 const core = require('@actions/core')
 const { GitHub } = require('@actions/github')
+const { cloneDeep } = require('lodash')
 
 async function updatePackageVersions(owner, packageFilesObject) {
   const octokit = new GitHub(process.env.ACCESS_TOKEN)
   const packages = core.getInput('packages-to-update').split(/\r?\n/)
-  const returnObj = { ...packageFilesObject }
+  const returnObj = cloneDeep(packageFilesObject)
 
   for (let pkg of packages) {
     // getting tags for now because getting releases seems inconsistent
