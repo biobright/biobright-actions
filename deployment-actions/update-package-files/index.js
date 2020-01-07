@@ -1,55 +1,42 @@
 const core = require('@actions/core')
 const { context, GitHub } = require('@actions/github')
-const fs = require('fs')
+const { readFile, writeFile } = require('fs')
 const path = require('path')
+const { updatePackageVersions } = require('./package-updater')
+const { getFileSha } = require('./utils')
+const { promisify } = require('util')
+const exec = promisify(require('child_process').exec)
+const readFileAsync = promisify(readFile)
+const writeFileAsync = promisify(writeFile)
 
-function promisifyCallback(fn, ...args) {
-  return new Promise((resolve, reject) => {
-    fn(...args, (err, data) => {
-      if (err) reject(err)
-      resolve(data)
-    })
-  })
-}
+const PACKAGE_FILE = 'package.json'
+const LOCK_FILE = 'package-lock.json'
 
-async function getFileSha(packageFileName, octokit, owner, repo) {
-  // get repo data
-  const repoResponse = await octokit.repos.get({
-    owner,
-    repo
-  })
-  // get commits for repo
-  const commitsResponse = await octokit.repos.listCommits({
-    owner,
-    repo,
-    sha: repoResponse.data.default_branch,
-    per_page: 1
-  })
-  // get the tree from the latest commit
-  const treeResponse = await octokit.git.getTree({
-    owner,
-    repo,
-    tree_sha: commitsResponse.data[0].commit.tree.sha
-  })
-  // get the file sha from the tree data
-  return treeResponse.data.tree.find(({ path }) => path === packageFileName).sha
-}
-
-async function updatePackageFileVersion(packageFileName) {
+async function updatePackageFileVersion() {
   const packageFilePath = path.join(
     process.env.GITHUB_WORKSPACE,
-    packageFileName
+    PACKAGE_FILE
   )
-  const packageObj = JSON.parse(await promisifyCallback(fs.readFile, packageFilePath))
+  const packageObj = JSON.parse(await readFileAsync(packageFilePath))
   packageObj.version = process.env.tag
-  const jsonPackage = JSON.stringify(packageObj, undefined, 2)
 
-  return Buffer.from(jsonPackage).toString('base64')
+  return packageObj
+}
+
+async function updateLockFile(packageFileObj) {
+  const data = JSON.stringify(packageFileObj, undefined, 2)
+  await writeFileAsync(PACKAGE_FILE, data)
+
+  const { stdout, stderr } = await exec('npm i --package-lock-only')
+  core.info(stdout)
+  core.warning(stderr)
+
+  return JSON.parse(await readFileAsync(LOCK_FILE))
 }
 
 async function run() {
   try {
-    const packageFiles = ['package.json', 'package-lock.json']
+    const packageFiles = [PACKAGE_FILE, LOCK_FILE]
     const octokit = new GitHub(process.env.GITHUB_TOKEN)
     const { owner, repo } = context.repo
     const { email } = context.payload.pusher
@@ -57,21 +44,32 @@ async function run() {
       name: owner,
       email
     }
+    let packageFilesObject = {}
+
+    packageFilesObject[PACKAGE_FILE] = await updatePackageFileVersion()
+
+    if (core.getInput('packages-to-update')) {
+      // reassign packageFilesObject if updates are needed
+      packageFilesObject = await updatePackageVersions(owner, packageFilesObject)
+    }
+
+    packageFilesObject[LOCK_FILE] = await updateLockFile(packageFilesObject[PACKAGE_FILE])
 
     for (let fileName of packageFiles) {
       const fileSha = await getFileSha(fileName, octokit, owner, repo)
-      const fileContent = await updatePackageFileVersion(fileName)
+      const content = JSON.stringify(packageFilesObject[fileName], undefined, 2)
       await octokit.repos.createOrUpdateFile({
         owner,
         repo,
         path: fileName,
         message: `Update ${fileName} version to ${process.env.tag}`,
-        content: fileContent,
+        content: Buffer.from(content).toString('base64'),
         sha: fileSha,
         branch: core.getInput('ref'),
         committer: userInfo,
         author: userInfo
       })
+      core.info(`${fileName} updated`)
     }
   } catch (err) {
     core.setFailed(err.message)
