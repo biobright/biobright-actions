@@ -25,6 +25,7 @@ async function lockfileUpdater(packageFileObj) {
   const { stdout, stderr } = await exec('npm i --package-lock-only')
   console.log('OUT', stdout)
   console.log('ERROR', stderr)
+  console.log(JSON.parse(await promisifyCallback(fs.readFile, 'package-lock.json')))
 }
 
 async function run() {
