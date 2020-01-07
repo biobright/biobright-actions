@@ -1,13 +1,4 @@
-function promisifyCallback(fn, ...args) {
-  return new Promise((resolve, reject) => {
-    fn(...args, (err, data) => {
-      if (err) reject(err)
-      resolve(data)
-    })
-  })
-}
-
-async function getFileSha(packageFileName, octokit, owner, repo) {
+async function getFileSha(fileName, octokit, owner, repo) {
   // get repo data
   const repoResponse = await octokit.repos.get({
     owner,
@@ -27,10 +18,9 @@ async function getFileSha(packageFileName, octokit, owner, repo) {
     tree_sha: commitsResponse.data[0].commit.tree.sha
   })
   // get the file sha from the tree data
-  return treeResponse.data.tree.find(({ path }) => path === packageFileName).sha
+  return treeResponse.data.tree.find(({ path }) => path === fileName).sha
 }
 
 module.exports = {
-  promisifyCallback,
   getFileSha
 }
