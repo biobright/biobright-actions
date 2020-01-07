@@ -19,7 +19,7 @@ async function run() {
   try {
     const createRefResponse = await createReleaseBranch()
 
-    console.log(JSON.stringify(createRefResponse, undefined, 2))
+    core.info(JSON.stringify(createRefResponse, undefined, 2))
   } catch (err) {
     core.setFailed(err.message)
   }

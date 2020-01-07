@@ -28,8 +28,9 @@ async function updateLockFile(packageFileObj) {
   await writeFileAsync(PACKAGE_FILE, data)
 
   const { stdout, stderr } = await exec('npm i --package-lock-only')
-  console.log('OUT', stdout)
-  console.log('ERROR', stderr)
+  core.info(stdout)
+  core.warning(stderr)
+
   return JSON.parse(await readFileAsync(LOCK_FILE))
 }
 
@@ -68,6 +69,7 @@ async function run() {
         committer: userInfo,
         author: userInfo
       })
+      core.info(`${fileName} updated`)
     }
   } catch (err) {
     core.setFailed(err.message)
