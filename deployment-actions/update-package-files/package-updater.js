@@ -16,7 +16,7 @@ async function updatePackageVersions(owner, packageFilesObject) {
     const latestTag = tags.data[0].name.replace('v', '')
     returnObj['package.json'].devDependencies[pkg] = `github:${owner}/${pkg}#${latestTag}`
   }
-  console.log(packageFilesObject)
+
   return returnObj
 }
 
