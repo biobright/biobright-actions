@@ -18,8 +18,11 @@ async function updatePackageFileVersion(packageFileName) {
 
 async function lockfileUpdater(packageFileObj) {
   const content = JSON.stringify(packageFileObj, undefined, 2)
+  console.log('CONTENT', content)
   const data = Buffer.from(content).toString('base64')
+  console.log('DATA', data)
   await promisifyCallback(fs.writeFile, 'package.json', data)
+  console.log('AFTER WRITE')
   console.log(JSON.parse(await promisifyCallback(fs.readFile, 'package.json')))
 }
 
