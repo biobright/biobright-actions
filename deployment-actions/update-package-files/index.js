@@ -16,6 +16,13 @@ async function updatePackageFileVersion(packageFileName) {
   return packageObj
 }
 
+async function lockfileUpdater(packageFileObj) {
+  const content = JSON.stringify(packageFileObj, undefined, 2)
+  const data = Buffer.from(content).toString('base64')
+  await promisifyCallback(fs.writeFile, 'package.json', data)
+  console.log(JSON.parse(await promisifyCallback(fs.readFile, 'package.json')))
+}
+
 async function run() {
   try {
     const packageFiles = ['package.json', 'package-lock.json']
@@ -52,6 +59,8 @@ async function run() {
         author: userInfo
       })
     }
+
+    await lockfileUpdater(packageFilesObject['package.json'])
   } catch (err) {
     core.setFailed(err.message)
   }
