@@ -4,6 +4,8 @@ const fs = require('fs')
 const path = require('path')
 const { updatePackageVersions } = require('./package-updater')
 const { promisifyCallback, getFileSha } = require('./utils')
+const util = require('util')
+const exec = util.promisify(require('child_process').exec)
 
 async function updatePackageFileVersion(packageFileName) {
   const packageFilePath = path.join(
@@ -18,10 +20,11 @@ async function updatePackageFileVersion(packageFileName) {
 
 async function lockfileUpdater(packageFileObj) {
   const data = JSON.stringify(packageFileObj, undefined, 2)
-  console.log('DATA', data)
   await promisifyCallback(fs.writeFile, 'package.json', data)
-  console.log('AFTER WRITE')
-  console.log(JSON.parse(await promisifyCallback(fs.readFile, 'package.json')))
+  //console.log(JSON.parse(await promisifyCallback(fs.readFile, 'package.json')))
+  const { stdout, stderr } = await exec('npm i --package-lock-only')
+  console.log('OUT', stdout)
+  console.log('ERROR', stderr)
 }
 
 async function run() {
