@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/biobright/biobright-actions#readme",
   "devDependencies": {
-    "@actions/core": "^1.2.0",
+    "@actions/core": "^1.9.1",
     "@actions/github": "^2.0.0",
     "@zeit/ncc": "^0.20.5",
     "eslint": "^6.8.0",
